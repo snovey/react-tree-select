@@ -1,0 +1,87 @@
+.tree-select {
+  position: relative;
+  display: flex;
+  width: 320px;
+  color: black;
+}
+
+.tree-value {
+  display: flex;
+  flex-grow: 1;
+  padding: 3px;
+  border-radius: 3px;
+  background-color: white;
+}
+
+.tags {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+/** Tag **/
+
+.tag {
+  display: inline-block;
+  border-radius: 4px;
+  padding: 1px;
+  margin: 2px;
+  background-color: #f3f3f3;
+}
+
+.close {
+  color: gray;
+  padding: 1px;
+  border-radius: 50%;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  border: 1px solid gray;
+  font-size: 10px;
+  cursor: pointer;
+}
+
+/** Tag **/
+
+/** 下拉框 **/
+.drop-down {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  height: 300px;
+  width: 100%;
+  text-align: left;
+  border-radius: 4px;
+  margin-bottom: -304px;
+  background-color: white;
+  box-shadow: 0 2px 8px rgba(0,0,0,.15);
+}
+
+.search {
+  display: flex;
+  height: 32px;
+  margin: 4px;
+}
+
+.drop-down ul {
+  margin: 0;
+  padding: 0 4px;
+  list-style: none;
+}
+
+.drop-down ul li {
+  padding: 0;
+  margin: 8px 0;
+  list-style: none;
+  white-space: nowrap;
+  outline: 0;
+}
+
+.drop-down ul li ul {
+  margin: 0;
+  padding: 0 0 0 18px;
+}
+/** 下拉框 **/
