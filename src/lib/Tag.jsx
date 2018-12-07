@@ -17,12 +17,14 @@ const Tag = ({
 )
 
 Tag.propTypes = {
+  children: PropTypes.node,
   closable: PropTypes.bool,
   color: PropTypes.string,
   onClose: PropTypes.func
 }
 
 Tag.defaultProps = {
+  children: null,
   closable: false,
   color: '#f3f3f3',
   onClose: () => {}
