@@ -103,7 +103,6 @@ class ReactTreeSelect extends Component {
   }
 
   setNodeStatus (node, checked) {
-    // sync child node status
     const setChildStatus = (node) => {
       if (Array.isArray(node.children)) {
         node.children.forEach(child => setChildStatus(child))
@@ -111,77 +110,12 @@ class ReactTreeSelect extends Component {
       node.checked = checked
       node.indeterminate = false
     }
-    /**
-     * @param {Object} node 节点
-     * @description 递归向上设置父节点的选中状态，并进行相关操作（根节点选中后移除 value 中的子节点）
-     * 当前节点变更
-     * ├── 未选 -> 已选
-     * │   ├── 父节点半选 -> 半选, value.add(child)
-     * │   ├── 父节点未选 -> 半选, value.add(child)
-     * │   ├── 父节点未选 -> 已选, value.add(parent), value.remove(children)
-     * │   └── 父节点半选 -> 已选, value.add(parent), value.remove(children)
-     * └── 已选 -> 未选
-     *     ├── 父节点半选 -> 半选, value.remove(children)
-     *     ├── 父节点半选 -> 未选, value.remove(children)
-     *     ├── 父节点已选 -> 未选, value.remove(children), value.remove(parent)
-     *     └── 父节点已选 -> 半选, value.remove(children), value.remove(parent)
-     */
     const setParentStatus = (node) => {
       let current = node
       while (current.parent) {
         const indeterminate = !current.parent.children.every(sibling => sibling.checked === checked && !sibling.indeterminate)
-
-        // const childrenValue = current.parent.children.map(sibling => sibling.value)
-        // const collection = value.filter(node => !childrenValue.includes(node.value) && !node.indeterminate)
-
-        // if (indeterminate) {
-        //   if (checked) {
-        //     console.log(`${current.title} -> 已选, ${current.parent.title} -> 半选`)
-        //     const set = new WeakSet(value)
-        //     value = set.has(current) ? value : [...value, current]
-        //   } else {
-        //     console.log(`${current.title} -> 未选, ${current.parent.title} -> 半选`)
-        //     // eslint-disable-next-line
-        //     value = [...collection.filter(node => node.value !== current.parent.value), ...current.parent.children.filter(sibling => sibling.value !== current.value)]
-        //   }
-        //   while (current.parent && !current.parent.indeterminate) {
-        //     current.parent.indeterminate = true
-        //     current = current.parent
-        //   }
-        //   break
-        // } else {
-        //   if (checked) {
-        //     console.log(`${current.title} -> 已选, ${current.parent.title} -> 已选`)
-        //     console.log([...collection, current.parent].map(node => node.title))
-        //     value = [...collection, current.parent]
-        //   } else {
-        //     console.log(`${current.title} -> 未选, ${current.parent.title} -> 未选`)
-        //     // eslint-disable-next-line
-        //     value = collection.filter(node => current.parent.value !== node.value)
-        //   }
-        // }
-
-        // if (checked) {
-        //   if (indeterminate) {
-        //     // 第一次执行该函数到这里时，current 已存在于 state.value 中
-        //     const set = new WeakSet(this.state.value)
-        //     console.log(set.has(current) && !current.indeterminate, current)
-        //     this.setState({ value: set.has(current) && !current.indeterminate ? this.state.value : [...this.state.value, current] })
-        //   } else {
-        //     this.setState({ value: [...collection, current.parent] })
-        //   }
-        // } else {
-        //   if (!current.parent.checked) {
-        //     this.setState({ value: collection })
-        //   } else {
-        //     // eslint-disable-next-line
-        //     this.setState({ value: collection.filter(node => current.parent.value !== node.value) })
-        //   }
-        // }
-
         current.parent.checked = indeterminate ? false : checked
         current.parent.indeterminate = indeterminate
-
         current = current.parent
       }
     }
@@ -284,7 +218,9 @@ class ReactTreeSelect extends Component {
   }
 
   clearSearch () {
-    const { treeData } = this.state
+    const { treeData, level } = this.state
+    const { searchRange } = this.props
+    level.slice(...searchRange).forEach(level => level.forEach((child) => { child.hit = true }))
     treeData.forEach(child => { child.hit = true })
     this.setState({
       treeData
