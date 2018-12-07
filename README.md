@@ -3,7 +3,7 @@ To building high-performance components.
 
 Source code for learning only. please use caution for production environment!
 
-Looking forward to your PR.
+Looking forward to your PR. 😁
 
 ## Available Scripts
 
