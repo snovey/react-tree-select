@@ -1,13 +1,9 @@
 import React, { Component } from 'react'
-import { TreeSelect } from 'antd'
 
 import ReactTreeSelect from './lib'
 import logo from './logo.svg'
 import './App.css'
 import data from './example/data.json'
-
-const SHOW_PARENT = TreeSelect.SHOW_PARENT
-console.log(SHOW_PARENT)
 
 class App extends Component {
   filterTreeNode (inputValue, treeNode) {
@@ -21,7 +17,6 @@ class App extends Component {
   }
 
   render () {
-    console.log('App render')
     const tProps = {
       treeData: data,
       allowClear: true,
@@ -51,7 +46,6 @@ class App extends Component {
           >
             Learn React
           </a>
-          {/* <TreeSelect {...tProps} /> */}
           <ReactTreeSelect {...tProps} />
         </header>
       </div>

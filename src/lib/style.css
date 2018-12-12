@@ -23,7 +23,8 @@
 /** Tag **/
 
 .tag {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
   border-radius: 4px;
   padding: 1px;
   margin: 2px;
@@ -33,11 +34,6 @@
 .close {
   color: gray;
   padding: 1px;
-  border-radius: 50%;
-  display: inline-flex;
-  justify-content: center;
-  align-items: center;
-  border: 1px solid gray;
   font-size: 10px;
   cursor: pointer;
 }

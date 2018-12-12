@@ -15,7 +15,7 @@ class ReactTreeSelect extends Component {
       treeData: props.treeData,
       value: props.value
     })
-    this.state.dropDownVisible = true
+    this.state.dropDownVisible = false
     this.state.level = []
     // value 与 treeData 引用相同的 Object
     this.state.treeData = this.state.treeData.map((node) => {
@@ -48,6 +48,25 @@ class ReactTreeSelect extends Component {
       if (!clickRoot) {
         this.toggleDropDownVisible(false)
       }
+    })
+  }
+
+  componentWillReceiveProps (nextProps) {
+    const { value } = nextProps
+    const nextValue = Array.isArray(value) ? value : [value]
+    // To prevent cycle renderer
+    const currValue = this.state.value.map(el => el.value)
+    // reference https://stackoverflow.com/questions/1187518/how-to-get-the-difference-between-two-arrays-in-javascript
+    const currMinusNext = currValue.filter(v => !nextValue.includes(v))
+    const nextMinusCurr = nextValue.filter(v => !currValue.includes(v))
+    // if (currMinusNext.length === 0 && nextMinusCurr.length === 0) {
+    //   console.warn('may be exist cycle render in your component')
+    // }
+    this.getValue(this.state.treeData, nextMinusCurr).forEach((node) => {
+      this.setNodeStatus(node, true)
+    })
+    this.getValue(this.state.treeData, currMinusNext).forEach((node) => {
+      this.setNodeStatus(node, false)
     })
   }
 
@@ -84,7 +103,7 @@ class ReactTreeSelect extends Component {
                 ? [...acc, ...getChild(cur.children)]
                 : [...acc, cur]
             , [])
-        })(ans)
+        }(ans))
       case 'SHOW_PARENT':
         return ans
       case 'SHOW_ALL':
@@ -96,13 +115,14 @@ class ReactTreeSelect extends Component {
                 ? [...acc, cur, ...getAll(cur.children)]
                 : [...acc, cur]
             , [])
-        })(ans)
+        }(ans))
       default:
         return ans
     }
   }
 
   setNodeStatus (node, checked) {
+    // sync child node status
     const setChildStatus = (node) => {
       if (Array.isArray(node.children)) {
         node.children.forEach(child => setChildStatus(child))
@@ -110,12 +130,31 @@ class ReactTreeSelect extends Component {
       node.checked = checked
       node.indeterminate = false
     }
+    /**
+     * @param {Object} node 节点
+     * @description 递归向上设置父节点的选中状态，并进行相关操作（根节点选中后移除 value 中的子节点）
+     * 当前节点变更
+     * ├── 未选 -> 已选
+     * │   ├── 父节点半选 -> 半选, value.add(child)
+     * │   ├── 父节点未选 -> 半选, value.add(child)
+     * │   ├── 父节点未选 -> 已选, value.add(parent), value.remove(children)
+     * │   └── 父节点半选 -> 已选, value.add(parent), value.remove(children)
+     * └── 已选 -> 未选
+     *     ├── 父节点半选 -> 半选, value.remove(children)
+     *     ├── 父节点半选 -> 未选, value.remove(children)
+     *     ├── 父节点已选 -> 未选, value.remove(children), value.remove(parent)
+     *     └── 父节点已选 -> 半选, value.remove(children), value.remove(parent)
+     * ----- 分割线 -----
+     * 节点变更后不及时对 value 进行操作，改由搜索获取
+     */
     const setParentStatus = (node) => {
       let current = node
       while (current.parent) {
         const indeterminate = !current.parent.children.every(sibling => sibling.checked === checked && !sibling.indeterminate)
+
         current.parent.checked = indeterminate ? false : checked
         current.parent.indeterminate = indeterminate
+
         current = current.parent
       }
     }
@@ -137,7 +176,7 @@ class ReactTreeSelect extends Component {
     return (
       <ul>
         {
-          treeData.map((node) => (
+          treeData.map(node => (
             node.hit && <li key={node.key}>
               {
                 Array.isArray(node.children)
@@ -195,6 +234,10 @@ class ReactTreeSelect extends Component {
   toggleDropDownVisible (visible) {
     this.setState({
       dropDownVisible: visible
+    }, () => {
+      if (this.state.dropDownVisible) {
+        this.searchRef.focus()
+      }
     })
   }
 
@@ -221,7 +264,6 @@ class ReactTreeSelect extends Component {
     const { treeData, level } = this.state
     const { searchRange } = this.props
     level.slice(...searchRange).forEach(level => level.forEach((child) => { child.hit = true }))
-    treeData.forEach(child => { child.hit = true })
     this.setState({
       treeData
     })
@@ -235,34 +277,39 @@ class ReactTreeSelect extends Component {
     } = this.state
     const {
       allowClear,
-      searchPlaceholder
+      placeholder,
+      searchPlaceholder,
+      style: customStyle,
+      dropDownStyle
     } = this.props
     const tree = this.generateTree(treeData)
-    console.log('tree select render')
     return (
       <div
         className='tree-select'
         ref={el => { this.rootRef = el }}
         onClick={() => { this.toggleDropDownVisible(true) }}
+        style={customStyle}
       >
         <div
           className='tree-value'
           tabIndex={-1}
         >
-          <div className='tags'>
+          <div className='tags' placeholder={placeholder}>
             {
               value.map(el => <Tag closable key={el.key} onClose={() => this.removeNode(el)}>{ el.title }</Tag>)
             }
           </div>
-          {allowClear && <Icon type='close-circle' theme='filled' className='clear' onClick={() => this.clearValue()} />}
+          {allowClear && <Icon type='close-circle' className='clear' onClick={() => this.clearValue()} />}
         </div>
         {
           dropDownVisible &&
-          <div className='drop-down'>
+          <div className='drop-down' style={dropDownStyle}>
             <Input
               className='search'
               placeholder={searchPlaceholder}
-              onPressEnter={(e) => this.filterTreeNode(e.target.value)}
+              onChange={e => this.filterTreeNode(e.target.value)}
+              onPressEnter={e => this.filterTreeNode(e.target.value)}
+              ref={(el) => { this.searchRef = el }}
             />
             {
               tree
@@ -276,8 +323,11 @@ class ReactTreeSelect extends Component {
 
 ReactTreeSelect.propTypes = {
   allowClear: PropTypes.bool,
+  placeholder: PropTypes.string,
   searchPlaceholder: PropTypes.string,
   showCheckedStrategy: PropTypes.string,
+  dropDownStyle: PropTypes.object,
+  style: PropTypes.object,
   treeData: PropTypes.array,
   value: PropTypes.array,
   searchRange: PropTypes.array,
@@ -287,8 +337,10 @@ ReactTreeSelect.propTypes = {
 
 ReactTreeSelect.defaultProps = {
   allowClear: false,
+  placeholder: 'focus to select',
   searchPlaceholder: 'Press Enter to search',
   showCheckedStrategy: 'SHOW_CHILD',
+  style: {},
   treeData: [],
   value: [],
   searchRange: [],
