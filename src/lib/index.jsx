@@ -62,11 +62,11 @@ class ReactTreeSelect extends Component {
     // if (currMinusNext.length === 0 && nextMinusCurr.length === 0) {
     //   console.warn('may be exist cycle render in your component')
     // }
-    this.getValue(this.state.treeData, nextMinusCurr).forEach((node) => {
-      this.setNodeStatus(node, true)
-    })
     this.getValue(this.state.treeData, currMinusNext).forEach((node) => {
       this.setNodeStatus(node, false)
+    })
+    this.getValue(this.state.treeData, nextMinusCurr).forEach((node) => {
+      this.setNodeStatus(node, true)
     })
   }
 
@@ -123,9 +123,9 @@ class ReactTreeSelect extends Component {
 
   setNodeStatus (node, checked) {
     // sync child node status
-    const setChildStatus = (node) => {
+    const setChildChecked = (node, checked) => {
       if (Array.isArray(node.children)) {
-        node.children.forEach(child => setChildStatus(child))
+        node.children.forEach(child => setChildChecked(child, checked))
       }
       node.checked = checked
       node.indeterminate = false
@@ -147,7 +147,7 @@ class ReactTreeSelect extends Component {
      * ----- 分割线 -----
      * 节点变更后不及时对 value 进行操作，改由搜索获取
      */
-    const setParentStatus = (node) => {
+    const setParentChecked = (node, checked) => {
       let current = node
       while (current.parent) {
         const indeterminate = !current.parent.children.every(sibling => sibling.checked === checked && !sibling.indeterminate)
@@ -160,8 +160,8 @@ class ReactTreeSelect extends Component {
     }
 
     node.checked = checked
-    setChildStatus(node)
-    setParentStatus(node)
+    setChildChecked(node, checked)
+    setParentChecked(node, checked)
     const { treeData } = this.state
     const { onChange, showCheckedStrategy } = this.props
     const value = this.getSelectedNodeList(treeData, showCheckedStrategy)
@@ -215,15 +215,25 @@ class ReactTreeSelect extends Component {
     }
     const { treeData, level } = this.state
     const { filterTreeNode, searchRange } = this.props
+    const setChildHit = (node, hit) => {
+      if (Array.isArray(node.children)) {
+        node.children.forEach(child => setChildHit(child));
+      }
+      node.hit = hit
+    }
+    const setParentHit = (node, hit) => {
+      let current = node
+      while (current.parent) {
+        current.parent.hit = hit
+        current = current.parent
+      }
+    }
     level.slice(...searchRange).forEach(level => level.forEach(child => {
       const hit = filterTreeNode(keyword, child)
       child.hit = hit
       if (hit) {
-        let current = child
-        while (current.parent) {
-          current.parent.hit = true
-          current = current.parent
-        }
+        setChildHit(child, true)
+        setParentHit(child, true)
       }
     }))
     this.setState({
